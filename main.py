@@ -8,11 +8,17 @@ from langchain.chat_models import ChatOpenAI
 from langchain.document_loaders import TextLoader
 from langchain.document_loaders import PyPDFLoader
 from langchain.vectorstores import Chroma
+from langchain.llms import OpenAI
+
+OPENAI_KEY= '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'
 
 # define embedding
 embeddings = OpenAIEmbeddings(
-    openai_api_key= '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'
+    openai_api_key = OPENAI_KEY
 )
+# define memory
+memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
+openai = OpenAI(temperature=0, openai_api_key= OPENAI_KEY)
 
 def create_db(file):
     # load documents
@@ -34,5 +40,7 @@ def create_db(file):
 
 if __name__ == "__main__":
     db3 = Chroma(persist_directory="./chroma_db", embedding_function=embeddings)
-    docs = db3.similarity_search("Appointment of Registrar-General and his duties.")
-    print(docs[0].page_content)
+    qa = ConversationalRetrievalChain.from_llm(openai, db3.as_retriever(), memory=memory, verbose=True)
+    query = "What are the duties of Appointment of Registrar-General"
+    result = qa({"question": query})
+    print(result)
