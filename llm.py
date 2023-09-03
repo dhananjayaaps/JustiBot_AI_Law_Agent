@@ -20,10 +20,6 @@ openai = OpenAI(temperature=0, openai_api_key= OPENAI_KEY)
 # db3 = Chroma(persist_directory="./chroma_db", embedding_function=embeddings)
 faiss_db = FAISS.load_local("faiss_index", embeddings)
 
-refine_eq_template = """You are the AI lawyer bot. the following is the conversation between you and human. genarate a question followed by '?' as helpful answer to gather additional information from human.
-
-Current conversation:
-{history}"""
 
 # define chain
 chat_llm = ConversationalRetrievalChain.from_llm(openai, faiss_db.as_retriever(search_kwargs={"k": 3}), memory=memory, verbose=True)
