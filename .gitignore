@@ -1,2 +1,4 @@
 /chroma_db
-/lawpdf.pdf
+/docs
+/.venv
+/__pycache__
