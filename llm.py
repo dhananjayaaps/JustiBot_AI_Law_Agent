@@ -8,7 +8,7 @@ from langchain.vectorstores import FAISS
 from langchain.llms import OpenAI
 from langchain.prompts.prompt import PromptTemplate
 
-OPENAI_KEY= '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'
+OPENAI_KEY= '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'
 
 # define embedding
 embeddings = OpenAIEmbeddings(
