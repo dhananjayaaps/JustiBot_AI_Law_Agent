@@ -8,6 +8,7 @@ from langchain.vectorstores import FAISS
 from langchain.llms import OpenAI
 from langchain.prompts.prompt import PromptTemplate
 
+
 OPENAI_KEY= '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'
 
 template = """
@@ -30,6 +31,7 @@ template = """
   """
 
 prompt = PromptTemplate(input_variables=["chat_history", "question", "context"], template=template)
+
 
 # define embedding
 embeddings = OpenAIEmbeddings(
