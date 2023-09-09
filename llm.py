@@ -8,22 +8,42 @@ from langchain.vectorstores import FAISS
 from langchain.llms import OpenAI
 from langchain.prompts.prompt import PromptTemplate
 
-OPENAI_KEY= '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'
+OPENAI_KEY= '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'
+
+template = """
+  You are an AI Lawyer. Conversation between a human and an AI lawyer and related context are given. Use the following pieces of context to answer the question at the end. If you don't know the answer or question is not related to law, just say that you don't know, don't try to make up an answer.
+  The laws have sections and subsections. A section start with number and dot (ex: "4.") and subsections are starts numbers with brackets(ex : "(2)")
+  you should provide exract sections and its subsections with its numbers followed by your answer. follow below template.
+  ANSWER TEMPLATE:
+    [sections and its subsections related to question]
+    [your answer]
+  CONTEXT:
+  {context}
+  
+  QUESTION: 
+  {question}
+
+  CHAT HISTORY:
+  {chat_history}
+  
+  ANSWER:
+  """
+
+prompt = PromptTemplate(input_variables=["chat_history", "question", "context"], template=template)
 
 # define embedding
 embeddings = OpenAIEmbeddings(
     openai_api_key = OPENAI_KEY
 )
 # define memory
-memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
+memory = ConversationBufferMemory(memory_key="chat_history", ai_prefix="AI Lawyer", return_messages=True)
 openai = OpenAI(temperature=0, openai_api_key= OPENAI_KEY)
 # db3 = Chroma(persist_directory="./chroma_db", embedding_function=embeddings)
 faiss_db = FAISS.load_local("faiss_index", embeddings)
 
 
 # define chain
-chat_llm = ConversationalRetrievalChain.from_llm(openai, faiss_db.as_retriever(search_kwargs={"k": 3}), memory=memory, verbose=True)
-# refine_qs = ConversationalRetrievalChain.from_llm(openai, faiss_db.as_retriever(search_kwargs={"k": 3}), verbose=True)
+chat_llm = ConversationalRetrievalChain.from_llm(openai, faiss_db.as_retriever(search_kwargs={"k": 3}), memory=memory,combine_docs_chain_kwargs={"prompt": prompt}, verbose=True)
 
 def create_db(file):
     # load documents
@@ -33,30 +53,19 @@ def create_db(file):
     # split documents
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=400, chunk_overlap=30)
     docs = text_splitter.split_documents(documents)
-    # create vector database from data
-    # vectordb = Chroma.from_documents(
-    #     documents=docs,
-    #     embedding=embeddings,
-    #     persist_directory='./chroma_db'
-    # )
     db = FAISS.from_documents(docs, embeddings)
     db.save_local("faiss_index")
     # vectordb.persist()
 
-# def refineQuestion(query):
-#     query = refine_eq_template.format(history=memory.load_memory_variables({})['history'])
-#     memory.save_context({"outputs": query})
-#     return refine_qs({"inputs": query}, {"question": query})
+def get_chat_history():
+    return memory.load_memory_variables({})
 
-# refine_k = 3
-# n = 0
-def chat(query):
-    # global n
-    # if n<refine_k:
-    #     res = refineQuestion(query)
-    #     n=n+1
-    #     return res['answer']
-    res = chat_llm({"question": query})
+def chat(question):
+    chat_history= get_chat_history()
+    res = chat_llm({"question": question, "chat_history": chat_history})
     # n=0
     # memory.clear()
+    memory.save_context({"input": question}, {"output": res['answer']})
     return res['answer']
+
+
